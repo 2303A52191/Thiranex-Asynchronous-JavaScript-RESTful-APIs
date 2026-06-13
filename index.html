@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard | Async REST</title>
+  <meta name="description" content="Real-time weather dashboard using async JavaScript and a public REST API." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-1" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-2" aria-hidden="true"></div>
+
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <h1>Weather Dashboard</h1>
+        </div>
+        <p class="sub">Search a city and get live weather by calling a public REST API (async/await).</p>
+      </div>
+
+      <div class="status-pill" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="apiStatusText">Ready</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="left">
+        <div class="card card-search">
+          <h2>Find Weather</h2>
+
+          <form id="weatherForm" class="search-form" autocomplete="off">
+            <div class="field">
+              <label for="cityInput">City name</label>
+              <div class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  id="cityInput"
+                  name="city"
+                  type="search"
+                  placeholder="e.g., London"
+                  required
+                  maxlength="80"
+                  aria-required="true"
+                />
+              </div>
+              <p class="hint">Tip: try "New York", "Paris", "Dubai".</p>
+            </div>
+
+            <div class="actions">
+              <button class="btn" type="submit">
+                <span class="btn-icon" aria-hidden="true">↻</span>
+                Get weather
+              </button>
+              <button class="btn btn-ghost" type="button" id="useMyLocationBtn" title="Uses your browser location">
+                Use my location
+              </button>
+            </div>
+          </form>
+
+          <div class="quick-cities">
+            <h3>Quick search</h3>
+            <div class="chips" role="group" aria-label="Quick city buttons">
+              <button type="button" class="chip" data-city="London">London</button>
+              <button type="button" class="chip" data-city="Paris">Paris</button>
+              <button type="button" class="chip" data-city="Tokyo">Tokyo</button>
+              <button type="button" class="chip" data-city="New York">New York</button>
+            </div>
+          </div>
+
+          <div class="callouts" aria-live="polite">
+            <div class="error-box" id="errorBox" hidden>
+              <div class="error-title">Could not fetch weather</div>
+              <div class="error-text" id="errorText"></div>
+            </div>
+
+            <div class="loading-box" id="loadingBox" hidden>
+              <div class="spinner" aria-hidden="true"></div>
+              <div class="loading-text">Loading real-time data…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-details">
+          <h2>Parsed JSON Details</h2>
+          <div class="details-grid">
+            <div class="mini">
+              <div class="mini-label">Temperature</div>
+              <div class="mini-value" id="tempValue">—</div>
+              <div class="mini-unit">°C</div>
+            </div>
+
+            <div class="mini">
+              <div class="mini-label">Humidity</div>
+              <div class="mini-value" id="humidityValue">—</div>
+              <div class="mini-unit">%</div>
+            </div>
+
+            <div class="mini">
+              <div class="mini-label">Wind speed</div>
+              <div class="mini-value" id="windValue">—</div>
+              <div class="mini-unit">km/h</div>
+            </div>
+
+            <div class="mini">
+              <div class="mini-label">Feels like</div>
+              <div class="mini-value" id="feelsLikeValue">—</div>
+              <div class="mini-unit">°C</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row2">
+            <div class="kv">
+              <div class="kv-key">Condition</div>
+              <div class="kv-val" id="conditionText">—</div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Last updated</div>
+              <div class="kv-val" id="updatedText">—</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <details class="json-preview" id="jsonPreview">
+            <summary>Show raw JSON (nested)</summary>
+            <pre id="jsonPre"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section class="right">
+        <div class="hero-card">
+          <div class="hero-top">
+            <div>
+              <div class="hero-city" id="cityTitle">Enter a city</div>
+              <div class="hero-meta" id="geoMeta">—</div>
+            </div>
+
+            <div class="weather-badge" aria-hidden="true">
+              <div class="badge-icon" id="badgeIcon">☁️</div>
+              <div class="badge-text" id="badgeText">—</div>
+            </div>
+          </div>
+
+          <div class="big-temp">
+            <div class="big-temp-value" id="bigTemp">—</div>
+            <div class="big-temp-sub">Temperature</div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">Humidity</div>
+              <div class="metric-value" id="metricHumidity">—%</div>
+              <div class="metric-help">moisture in air</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Wind</div>
+              <div class="metric-value" id="metricWind">— km/h</div>
+              <div class="metric-help">speed of wind</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Feels like</div>
+              <div class="metric-value" id="metricFeels">— °C</div>
+              <div class="metric-help">approximate comfort</div>
+            </div>
+          </div>
+
+          <div class="forecast">
+            <h2>Next hour snapshot</h2>
+            <div class="forecast-grid" id="forecastGrid"></div>
+          </div>
+
+          <footer class="foot-note">
+            Weather data is fetched from Open-Meteo. No API key required.
+          </footer>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>
+
